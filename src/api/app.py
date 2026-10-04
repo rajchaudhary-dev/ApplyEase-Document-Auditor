@@ -10,11 +10,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.agent.auditor_agent import DocumentAuditorPipeline
 from src.db.database import get_candidate_dossier_from_db, init_db
 from src.services.storage_bucket import StorageBucketService
+from src.api.gazette_router import router as gazette_router
 
 app = FastAPI(
-    title="ApplyEase - Multimodal Document Auditor API",
-    description="Autonomous recruitment intelligence agent for candidate document extraction, discrepancy auditing, and asset compression.",
-    version="1.0.0"
+    title="ApplyEase - Autonomous Recruitment Intelligence API",
+    description="Autonomous recruitment intelligence agent for candidate document extraction, gazette rule evaluation, discrepancy auditing, and asset compression.",
+    version="2.0.0"
 )
 
 # Enable CORS for frontend/team integrations
@@ -25,6 +26,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include Gazette Intelligence Router
+app.include_router(gazette_router)
 
 # Initialize DB on server start
 @app.on_event("startup")

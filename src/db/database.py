@@ -83,6 +83,18 @@ def init_db():
         );
     """)
 
+    # Gazette Rules Cache Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS gazette_rules (
+            gazette_id TEXT PRIMARY KEY,
+            sha256_hash TEXT UNIQUE NOT NULL,
+            file_name TEXT NOT NULL,
+            parsed_json TEXT NOT NULL,
+            post_code TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
     conn.commit()
     conn.close()
     logger.info("Database initialized successfully at %s", DB_PATH)
@@ -208,3 +220,63 @@ def get_candidate_dossier_from_db(candidate_id: str) -> Optional[Dict[str, Any]]
         "discrepancies": discs,
         "transformed_assets": assets
     }
+
+
+def save_gazette_rule(gazette_id: str, sha256_hash: str, file_name: str, parsed_json_str: str, post_code: Optional[str] = None):
+    """Save or update parsed gazette rules JSON indexed by SHA-256 hash."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT OR REPLACE INTO gazette_rules (gazette_id, sha256_hash, file_name, parsed_json, post_code)
+        VALUES (?, ?, ?, ?, ?)
+    """, (gazette_id, sha256_hash, file_name, parsed_json_str, post_code))
+
+    conn.commit()
+    conn.close()
+    logger.info("Gazette rules saved to DB [ID: %s, Hash: %s]", gazette_id, sha256_hash[:10])
+
+def get_gazette_rule_by_hash(sha256_hash: str) -> Optional[Dict[str, Any]]:
+    """Retrieve cached gazette rules by SHA-256 hash."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM gazette_rules WHERE sha256_hash = ?", (sha256_hash,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    data = json.loads(row["parsed_json"])
+    data["gazette_id"] = row["gazette_id"]
+    data["sha256_hash"] = row["sha256_hash"]
+    return data
+
+def get_gazette_rule_by_id(gazette_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieve cached gazette rules by Gazette ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM gazette_rules WHERE gazette_id = ?", (gazette_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+
+    data = json.loads(row["parsed_json"])
+    data["gazette_id"] = row["gazette_id"]
+    data["sha256_hash"] = row["sha256_hash"]
+    return data
+
+def list_all_gazettes() -> List[Dict[str, Any]]:
+    """List summary of all cached recruitment gazettes."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT gazette_id, sha256_hash, file_name, post_code, created_at FROM gazette_rules ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [dict(row) for row in rows]
