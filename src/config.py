@@ -16,6 +16,13 @@ DB_PATH = Path(os.getenv("DATABASE_PATH", BASE_DIR / "applyease_dossier.db"))
 GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Supabase Cloud Persistence & Object Storage
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://lhyblywzfovvvpptiwiz.supabase.co").strip().rstrip("/")
+SUPABASE_SERVICE_ROLE_KEY = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY") or "").strip()
+SUPABASE_ASSETS_BUCKET = os.getenv("SUPABASE_ASSETS_BUCKET", "candidate-assets")
+SUPABASE_VACANCIES_TABLE = os.getenv("SUPABASE_VACANCIES_TABLE", "vacancies")
+SUPABASE_DOSSIERS_TABLE = os.getenv("SUPABASE_DOSSIERS_TABLE", "candidate_dossiers")
+
 # Asset Constraints (Default portal thresholds)
 PHOTO_CONSTRAINTS = {
     "min_kb": int(os.getenv("MIN_PHOTO_SIZE_KB", 20)),
